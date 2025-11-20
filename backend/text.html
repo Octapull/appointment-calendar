@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Backend Test</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; max-width: 600px; margin: auto; }
+        .box { border: 1px solid #ccc; padding: 20px; margin-bottom: 20px; border-radius: 8px; }
+        input { display: block; width: 100%; margin-bottom: 10px; padding: 8px; }
+        button { padding: 10px 20px; background: #28a745; color: white; border: none; cursor: pointer; }
+        button:hover { background: #218838; }
+        .response { background: #f4f4f4; padding: 10px; margin-top: 10px; border-left: 4px solid #007bff; word-break: break-all; }
+    </style>
+</head>
+<body>
+
+    <h2>🚀 Hafta 1: Backend Test Paneli</h2>
+
+    <div class="box">
+        <h3>1. Kayıt Ol (Register)</h3>
+        <input type="text" id="regName" placeholder="Ad Soyad" value="Test Kullanıcısı">
+        <input type="email" id="regEmail" placeholder="E-posta" value="test@example.com">
+        <input type="password" id="regPass" placeholder="Şifre" value="123456">
+        <button onclick="register()">Kayıt Ol</button>
+        <div id="regResult" class="response">Sonuç burada görünecek...</div>
+    </div>
+
+    <div class="box">
+        <h3>2. Giriş Yap (Login)</h3>
+        <input type="email" id="loginEmail" placeholder="E-posta" value="test@example.com">
+        <input type="password" id="loginPass" placeholder="Şifre" value="123456">
+        <button onclick="login()" style="background-color: #007bff;">Giriş Yap</button>
+        <div id="loginResult" class="response">Sonuç burada görünecek...</div>
+    </div>
+
+    <script>
+        const API_URL = "http://localhost:5000/api/auth";
+
+        async function register() {
+            const name = document.getElementById('regName').value;
+            const email = document.getElementById('regEmail').value;
+            const password = document.getElementById('regPass').value;
+
+            try {
+                const res = await fetch(`${API_URL}/register`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ fullName: name, email, password })
+                });
+                const data = await res.json();
+                document.getElementById('regResult').innerText = JSON.stringify(data, null, 2);
+            } catch (err) {
+                document.getElementById('regResult').innerText = "Hata: " + err;
+            }
+        }
+
+        async function login() {
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPass').value;
+
+            try {
+                const res = await fetch(`${API_URL}/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+                const data = await res.json();
+                document.getElementById('loginResult').innerText = JSON.stringify(data, null, 2);
+                
+                if(data.token) {
+                    document.getElementById('loginResult').style.borderLeftColor = "green";
+                    alert("✅ BAŞARILI! Token alındı. Hafta 1 Tamamlandı!");
+                }
+            } catch (err) {
+                document.getElementById('loginResult').innerText = "Hata: " + err;
+            }
+        }
+    </script>
+</body>
+</html>
