@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hafta 2: Randevu Testi</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; padding: 20px; background: #f4f7f6; max-width: 900px; margin: auto; }
+        .container { display: flex; gap: 20px; }
+        .panel { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); flex: 1; }
+        h3 { border-bottom: 2px solid #eee; padding-bottom: 10px; color: #333; }
+        input, textarea { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
+        button { width: 100%; padding: 10px; border: none; border-radius: 4px; cursor: pointer; color: white; font-weight: bold; }
+        .btn-login { background: #007bff; }
+        .btn-add { background: #28a745; }
+        .btn-del { background: #dc3545; width: auto; padding: 5px 10px; margin-left: 10px; }
+        
+        .list-item { background: #fff; border-left: 4px solid #28a745; padding: 10px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .status { padding: 10px; margin-bottom: 20px; border-radius: 4px; display: none; }
+        .success { background: #d4edda; color: #155724; display: block; }
+        .error { background: #f8d7da; color: #721c24; display: block; }
+    </style>
+</head>
+<body>
+
+    <h2>📅 Hafta 2: Randevu Sistemi Testi</h2>
+
+    <div id="statusBox" class="status">Durum mesajı...</div>
+
+    <div class="container">
+        <div class="panel" style="flex: 0.5;">
+            <h3>🔑 1. Giriş Yap</h3>
+            <input type="email" id="email" value="test@example.com">
+            <input type="password" id="pass" value="123456">
+            <button class="btn-login" onclick="login()">Giriş & Token Al</button>
+            <p id="tokenStatus" style="font-size: 0.8em; color: #666; margin-top: 10px;">Token: Yok ❌</p>
+        </div>
+
+        <div class="panel">
+            <h3>➕ 2. Randevu Ekle</h3>
+            <input type="text" id="title" placeholder="Başlık (Örn: Toplantı)">
+            <textarea id="desc" placeholder="Açıklama" rows="2"></textarea>
+            <label>Başlangıç:</label>
+            <input type="datetime-local" id="start">
+            <label>Bitiş:</label>
+            <input type="datetime-local" id="end">
+            <button class="btn-add" onclick="addAppointment()">Randevuyu Kaydet</button>
+        </div>
+    </div>
+
+    <div class="container" style="margin-top: 20px;">
+        <div class="panel">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h3>📋 Randevularım</h3>
+                <button onclick="getAppointments()" style="width: auto; background: #6c757d;">Listeyi Yenile</button>
+            </div>
+            <div id="appointmentList" style="margin-top: 15px;">
+                <p style="color: #777;">Henüz randevu yok veya yüklenmedi.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = "http://localhost:5000/api";
+        let token = localStorage.getItem('authToken') || "";
+
+        // Sayfa açılınca token varsa durumu güncelle
+        if(token) {
+            document.getElementById('tokenStatus').innerHTML = "Token: Hazır ✅";
+            getAppointments(); // Token varsa listeyi hemen çek
+        }
+
+        function showStatus(msg, type) {
+            const box = document.getElementById('statusBox');
+            box.className = type === 'error' ? 'status error' : 'status success';
+            box.innerText = msg;
+            setTimeout(() => box.style.display = 'none', 3000);
+        }
+
+        // 1. GİRİŞ FONKSİYONU
+        async function login() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('pass').value;
+
+            try {
+                const res = await fetch(`${API_URL}/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+                const data = await res.json();
+
+                if (data.token) {
+                    token = data.token;
+                    localStorage.setItem('authToken', token);
+                    document.getElementById('tokenStatus').innerHTML = "Token: Hazır ✅";
+                    showStatus("Giriş Başarılı! Randevu işlemleri açıldı.", "success");
+                    getAppointments();
+                } else {
+                    showStatus("Hata: " + data.msg, "error");
+                }
+            } catch (err) { showStatus("Bağlantı Hatası", "error"); }
+        }
+
+        // 2. RANDEVU EKLEME
+        async function addAppointment() {
+            if(!token) return showStatus("Önce giriş yapmalısın!", "error");
+
+            const title = document.getElementById('title').value;
+            const description = document.getElementById('desc').value;
+            const start_time = document.getElementById('start').value; // ISO Formatı gönderir
+            const end_time = document.getElementById('end').value;
+
+            try {
+                const res = await fetch(`${API_URL}/appointments`, {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'x-auth-token': token // Middleware kontrolü için şart!
+                    },
+                    body: JSON.stringify({ title, description, start_time, end_time })
+                });
+                
+                if(res.ok) {
+                    showStatus("Randevu Başarıyla Eklendi!", "success");
+                    getAppointments(); // Listeyi güncelle
+                } else {
+                    const data = await res.json();
+                    showStatus("Hata: " + data.msg, "error");
+                }
+            } catch (err) { showStatus("Hata oluştu: " + err, "error"); }
+        }
+
+        // 3. RANDEVU LİSTELEME
+        async function getAppointments() {
+            if(!token) return;
+
+            try {
+                const res = await fetch(`${API_URL}/appointments`, {
+                    headers: { 'x-auth-token': token }
+                });
+                const data = await res.json();
+                
+                const listDiv = document.getElementById('appointmentList');
+                listDiv.innerHTML = "";
+
+                if(data.length === 0) {
+                    listDiv.innerHTML = "<p>Kayıtlı randevu yok.</p>";
+                    return;
+                }
+
+                data.forEach(app => {
+                    // Tarihi güzelleştir
+                    const start = new Date(app.start_time).toLocaleString('tr-TR');
+                    const end = new Date(app.end_time).toLocaleString('tr-TR');
+
+                    listDiv.innerHTML += `
+                        <div class="list-item">
+                            <div>
+                                <strong>${app.title}</strong><br>
+                                <small style="color:#666">${start} - ${end}</small><br>
+                                <small>${app.description || ''}</small>
+                            </div>
+                            <button class="btn-del" onclick="deleteAppointment('${app.id}')">Sil</button>
+                        </div>
+                    `;
+                });
+
+            } catch (err) { console.error(err); }
+        }
+
+        // 4. RANDEVU SİLME
+        async function deleteAppointment(id) {
+            if(!confirm("Silmek istediğine emin misin?")) return;
+
+            try {
+                const res = await fetch(`${API_URL}/appointments/${id}`, {
+                    method: 'DELETE',
+                    headers: { 'x-auth-token': token }
+                });
+
+                if(res.ok) {
+                    showStatus("Randevu Silindi", "success");
+                    getAppointments();
+                } else {
+                    showStatus("Silinemedi", "error");
+                }
+            } catch (err) { showStatus("Hata", "error"); }
+        }
+    </script>
+</body>
+</html>
