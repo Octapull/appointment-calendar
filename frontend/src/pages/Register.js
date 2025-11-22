@@ -14,46 +14,52 @@ const Register = () => {
     e.preventDefault();
     try {
       await register(fullName, email, password);
-      navigate('/'); // Kayıt olunca direkt içeri al
+      navigate('/');
     } catch (err) {
-      setError('Kayıt başarısız. E-posta kullanılıyor olabilir.');
+      setError('Kayıt başarısız.');
     }
   };
 
   return (
-    <div style={{ maxWidth: '400px', margin: '50px auto', textAlign: 'center' }}>
-      <h2>Kayıt Ol</h2>
-      {error && <p style={{ color: 'red' }}>{error}</p>}
-      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-        <input 
-          type="text" 
-          placeholder="Ad Soyad" 
-          value={fullName} 
-          onChange={(e) => setFullName(e.target.value)}
-          required 
-          style={{ padding: '10px' }}
-        />
-        <input 
-          type="email" 
-          placeholder="E-posta" 
-          value={email} 
-          onChange={(e) => setEmail(e.target.value)}
-          required 
-          style={{ padding: '10px' }}
-        />
-        <input 
-          type="password" 
-          placeholder="Şifre" 
-          value={password} 
-          onChange={(e) => setPassword(e.target.value)}
-          required 
-          style={{ padding: '10px' }}
-        />
-        <button type="submit" style={{ padding: '10px', background: 'green', color: 'white', border: 'none' }}>
-          Kayıt Ol
-        </button>
-      </form>
-      <p>Zaten hesabın var mı? <Link to="/login">Giriş Yap</Link></p>
+    <div className="auth-wrapper">
+      <div className="auth-card">
+        <h2 className="auth-title">Aramıza Katıl</h2>
+        {error && <p style={{ color: 'red' }}>{error}</p>}
+        
+        <form onSubmit={handleSubmit} className="auth-form">
+          <input 
+            type="text" 
+            className="auth-input"
+            placeholder="Ad Soyad" 
+            value={fullName} 
+            onChange={(e) => setFullName(e.target.value)}
+            required 
+          />
+          <input 
+            type="email" 
+            className="auth-input"
+            placeholder="E-posta" 
+            value={email} 
+            onChange={(e) => setEmail(e.target.value)}
+            required 
+          />
+          <input 
+            type="password" 
+            className="auth-input"
+            placeholder="Şifre" 
+            value={password} 
+            onChange={(e) => setPassword(e.target.value)}
+            required 
+          />
+          <button type="submit" className="auth-btn">
+            Kayıt Ol
+          </button>
+        </form>
+
+        <div className="auth-footer">
+          Zaten hesabın var mı? <Link to="/login">Giriş Yap</Link>
+        </div>
+      </div>
     </div>
   );
 };
