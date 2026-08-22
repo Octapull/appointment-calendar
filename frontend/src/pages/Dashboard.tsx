@@ -1,23 +1,54 @@
-import React, { useState, useEffect, useContext } from 'react';
+import { useState, useEffect, useContext } from 'react';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
+import type {
+  EventInput,
+  EventClickArg,
+  DateSelectArg,
+  EventDropArg,
+} from '@fullcalendar/core';
+import type { EventResizeDoneArg } from '@fullcalendar/interaction';
 import api from '../api/api';
 import { AuthContext } from '../context/AuthContext';
 
+// Backend'den gelen randevu kaydi
+interface Appointment {
+  id: number;
+  title: string;
+  start_time: string;
+  end_time: string;
+  color: string;
+  category?: string;
+}
+
+interface NewEvent {
+  title: string;
+  start: string;
+  end: string;
+  color: string;
+  category: string;
+}
+
+interface Category {
+  id: string;
+  name: string;
+  color: string;
+}
+
 const Dashboard = () => {
   const { user, logout } = useContext(AuthContext);
-  const [events, setEvents] = useState([]);
+  const [events, setEvents] = useState<EventInput[]>([]);
   const [showModal, setShowModal] = useState(false);
-  
-  const [newEvent, setNewEvent] = useState({ 
-      title: '', start: '', end: '', 
-      color: '#3788d8', 
+
+  const [newEvent, setNewEvent] = useState<NewEvent>({
+      title: '', start: '', end: '',
+      color: '#3788d8',
       category: 'is' // Varsayılan kategori
   });
 
-  const categories = [
+  const categories: Category[] = [
     { id: 'is', name: '🏢 İş / Toplantı', color: '#3788d8' },    // Mavi
     { id: 'ozel', name: '🏠 Kişisel / Özel', color: '#28a745' }, // Yeşil
     { id: 'okul', name: '🎓 Okul / Ders', color: '#fd7e14' },    // Turuncu
@@ -25,18 +56,16 @@ const Dashboard = () => {
     { id: 'diger', name: '✨ Diğer', color: '#6f42c1' }          // Mor
   ];
 
-  
-
   useEffect(() => {
     fetchEvents();
   }, []);
 
   const fetchEvents = async () => {
     try {
-      const res = await api.get('/appointments');
+      const res = await api.get<Appointment[]>('/appointments');
       // Backend verisini FullCalendar formatına çevir
-      const formattedEvents = res.data.map(item => ({
-        id: item.id,
+      const formattedEvents: EventInput[] = res.data.map((item) => ({
+        id: String(item.id),
         title: item.title,
         start: item.start_time,
         end: item.end_time,
@@ -49,12 +78,13 @@ const Dashboard = () => {
     }
   };
 
-  const handleDateSelect = (selectInfo) => {
-    setNewEvent({ 
-      title: '', 
-      start: selectInfo.startStr, 
+  const handleDateSelect = (selectInfo: DateSelectArg) => {
+    setNewEvent({
+      title: '',
+      start: selectInfo.startStr,
       end: selectInfo.endStr,
-      color: '#3788d8' // Her yeni açılışta mavi başla
+      color: '#3788d8', // Her yeni açılışta mavi başla
+      category: 'is'
     });
     setShowModal(true);
   };
@@ -79,7 +109,7 @@ const Dashboard = () => {
   };
 
   // ... (Diğer silme ve güncelleme fonksiyonları aynı kalacak) ...
-  const handleEventClick = async (clickInfo) => {
+  const handleEventClick = async (clickInfo: EventClickArg) => {
     if (window.confirm(`'${clickInfo.event.title}' silinsin mi?`)) {
       try {
         await api.delete(`/appointments/${clickInfo.event.id}`);
@@ -88,7 +118,7 @@ const Dashboard = () => {
     }
   };
 
-  const handleEventDrop = async (info) => {
+  const handleEventDrop = async (info: EventDropArg | EventResizeDoneArg) => {
     try {
       await api.put(`/appointments/${info.event.id}`, {
         start_time: info.event.startStr,
@@ -124,7 +154,7 @@ const Dashboard = () => {
             hour: '2-digit',
             minute: '2-digit',
             meridiem: false,
-            hour12: false 
+            hour12: false
           }}
 
           eventClick={handleEventClick}
@@ -141,12 +171,12 @@ const Dashboard = () => {
         <div style={{position:'fixed', top:0, left:0, right:0, bottom:0, background:'rgba(0,0,0,0.6)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:1000}}>
           <div style={{background:'white', padding:'30px', borderRadius:'15px', width:'350px', textAlign:'center'}}>
             <h3 style={{color: '#333'}}>Yeni Etkinlik</h3>
-            
-            <input 
+
+            <input
               className="auth-input"
               style={{width:'90%', marginBottom:'15px'}}
-              value={newEvent.title} 
-              onChange={(e) => setNewEvent({...newEvent, title:e.target.value})} 
+              value={newEvent.title}
+              onChange={(e) => setNewEvent({...newEvent, title:e.target.value})}
               placeholder="Başlık girin..."
               autoFocus
             />
@@ -154,15 +184,16 @@ const Dashboard = () => {
             {/* KATEGORİ SEÇİM KUTUSU */}
             <div style={{marginBottom: '20px', textAlign: 'left'}}>
               <label style={{fontSize:'0.9rem', color:'#666', display:'block', marginBottom:'5px'}}>Kategori Seçiniz:</label>
-              <select 
+              <select
                 className="auth-input"
                 style={{width: '100%', padding: '10px', cursor: 'pointer'}}
                 value={newEvent.category}
                 onChange={(e) => {
                   const selectedCat = categories.find(c => c.id === e.target.value);
+                  if (!selectedCat) return;
                   setNewEvent({
-                    ...newEvent, 
-                    category: selectedCat.id, 
+                    ...newEvent,
+                    category: selectedCat.id,
                     color: selectedCat.color // Kategori seçilince rengi otomatik ayarla
                   });
                 }}
@@ -174,7 +205,7 @@ const Dashboard = () => {
                 ))}
               </select>
             </div>
-            
+
             <div>
               <button onClick={() => setShowModal(false)} style={{padding:'10px', marginRight:'10px', cursor:'pointer', border:'none', background:'#ddd', borderRadius:'5px'}}>İptal</button>
               <button onClick={handleSave} className="auth-btn" style={{width:'auto', padding:'10px 20px', backgroundColor: newEvent.color}}>Kaydet</button>

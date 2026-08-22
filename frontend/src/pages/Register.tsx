@@ -1,4 +1,4 @@
-import React, { useState, useContext } from 'react';
+import { useState, useContext, type FormEvent } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
 
@@ -10,12 +10,12 @@ const Register = () => {
   const navigate = useNavigate();
   const [error, setError] = useState('');
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     try {
       await register(fullName, email, password);
       navigate('/');
-    } catch (err) {
+    } catch {
       setError('Kayıt başarısız.');
     }
   };
@@ -25,31 +25,31 @@ const Register = () => {
       <div className="auth-card">
         <h2 className="auth-title">Aramıza Katıl</h2>
         {error && <p style={{ color: 'red' }}>{error}</p>}
-        
+
         <form onSubmit={handleSubmit} className="auth-form">
-          <input 
-            type="text" 
+          <input
+            type="text"
             className="auth-input"
-            placeholder="Ad Soyad" 
-            value={fullName} 
+            placeholder="Ad Soyad"
+            value={fullName}
             onChange={(e) => setFullName(e.target.value)}
-            required 
+            required
           />
-          <input 
-            type="email" 
+          <input
+            type="email"
             className="auth-input"
-            placeholder="E-posta" 
-            value={email} 
+            placeholder="E-posta"
+            value={email}
             onChange={(e) => setEmail(e.target.value)}
-            required 
+            required
           />
-          <input 
-            type="password" 
+          <input
+            type="password"
             className="auth-input"
-            placeholder="Şifre" 
-            value={password} 
+            placeholder="Şifre"
+            value={password}
             onChange={(e) => setPassword(e.target.value)}
-            required 
+            required
           />
           <button type="submit" className="auth-btn">
             Kayıt Ol
